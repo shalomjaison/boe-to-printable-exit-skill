@@ -23,8 +23,26 @@ pixel-perfect regardless of input length.
 
 - `assets/exit_papers_template.pdf` — 3-page template (yellow/green/blue) with named form fields
 - `scripts/fill_exit_papers.py` — fills all 3 pages in one call
+- `scripts/patch_template.py` — re-patches the template if AcroForm compatibility is ever broken
 
-Look for the template first in assets/exit_papers_template.pdf. If not found there, check if the user has uploaded it directly in chat.
+Look for the template first in `assets/exit_papers_template.pdf` (relative to this SKILL.md).
+If not found there, check if the user has uploaded it directly in chat.
+
+## Template Patching
+
+The template PDF (`assets/exit_papers_template.pdf`) has already been **pre-patched** for
+AcroForm compatibility. **Do not re-patch it as part of normal operation.**
+
+If form fields fail to fill or save correctly (e.g. fields appear blank in the output PDF
+after running the fill script), re-patching may be needed. A patch script is available
+in the scripts directory:
+
+```bash
+python <skill_dir>/scripts/patch_template.py
+```
+
+This regenerates the patched template in-place. **Only run this if the fill script produces
+a PDF with empty fields** — not as a routine step.
 
 ## Workflow
 
@@ -32,20 +50,21 @@ Look for the template first in assets/exit_papers_template.pdf. If not found the
 
 Extract the following fields visually from the BOE. The BOE is a UAE Customs form — sections
 are numbered. Extract exactly as shown, stripping any AE-XXXXXXX code prefixes from names.
-The BOE PDF will either be uploaded directly in chat, or found in the mounted uploads folder. Check both before asking the user to upload it.
+The BOE PDF will either be uploaded directly in chat, or found in the mounted uploads folder.
+Check both before asking the user to upload it.
 
-| Data Field          | BOE Section & Label                              | Notes |
-|---------------------|--------------------------------------------------|-------|
-| exporter            | Section 6 — IMPORTER / EXPORTER                 | Strip "AE-XXXXXXX - " prefix |
-| dec_no_part1              | Section 1 — DEC NO (number inside the box)      | e.g. 201-00007472-26 |
-| dec_no_part2        | Section 1 — number printed below the DEC NO box | e.g. 141505260633 |
-| dec_date            | Section 2 — DEC DATE                            | Format as DD/MM/YYYY |
-| country_of_origin   | Section 24 — ORIGIN                             | |
-| point_of_exit       | Section 18 — PORT OF LOADING                    | |
-| destination         | Section 21 — DESTINATION                        | |
-| quantity            | Section 16 — NO. OF PACKAGES                    | |
-| description         | Sections 19 + 23 + 12A combined                 | Marks & Numbers + Goods Description + "VAT TRN: XXXXXXXXX" |
-| total_weight        | Section 36 — WEIGHT NET                         | Include unit e.g. "102505 KG" |
+| Data Field        | BOE Section & Label                              | Notes |
+|-------------------|--------------------------------------------------|-------|
+| exporter          | Section 6 — IMPORTER / EXPORTER                 | Strip "AE-XXXXXXX - " prefix |
+| dec_no_part1      | Section 1 — DEC NO (number inside the box)      | e.g. 201-00007472-26 |
+| dec_no_part2      | Section 1 — number printed below the DEC NO box | e.g. 141505260633 |
+| dec_date          | Section 2 — DEC DATE                            | Format as DD/MM/YYYY |
+| country_of_origin | Section 24 — ORIGIN                             | |
+| point_of_exit     | Section 18 — PORT OF LOADING                    | |
+| destination       | Section 21 — DESTINATION                        | |
+| quantity          | Section 16 — NO. OF PACKAGES                    | |
+| description       | Sections 19 + 23 + 12A combined                 | Marks & Numbers + Goods Description + "VAT TRN: XXXXXXXXX" — see example JSON below |
+| total_weight      | Section 36 — WEIGHT NET                         | Include unit e.g. "102505 KG" |
 
 After extraction, **show the user a summary table** of extracted values and ask them to confirm
 or correct before generating. This is important — OCR can miss values on dense forms.
@@ -62,28 +81,29 @@ regenerate. All 3 copies always receive the same data — never update just one 
 
 **Field name mapping for common user corrections:**
 
-| User says...                        | Data field          |
-|-------------------------------------|---------------------|
-| exporter / company name             | exporter            |
-| bill number / declaration number    | dec_no_part1 + dec_no_part2              |
-| second number                       | dec_no_part2        |
-| date                                | dec_date            |
-| country of origin / origin          | country_of_origin   |
-| point of exit / port of loading     | point_of_exit       |
-| destination / country               | destination         |
-| quantity / packages / containers    | quantity            |
-| description / goods                 | description         |
-| weight / total weight               | total_weight        |
+| User says...                        | Data field              |
+|-------------------------------------|-------------------------|
+| exporter / company name             | exporter                |
+| bill number / declaration number    | dec_no_part1 + dec_no_part2 |
+| second number                       | dec_no_part2            |
+| date                                | dec_date                |
+| country of origin / origin          | country_of_origin       |
+| point of exit / port of loading     | point_of_exit           |
+| destination / country               | destination             |
+| quantity / packages / containers    | quantity                |
+| description / goods                 | description             |
+| weight / total weight               | total_weight            |
 
 ## Generating the PDF
 
-Once all fields are confirmed, run the fill script:
+Once all fields are confirmed, run the fill script using the path relative to this SKILL.md:
 
 ```bash
-python /path/to/scripts/fill_exit_papers.py '<json>' /mnt/user-data/outputs/exit_certificates_<dec_no_part1>.pdf
+python <skill_dir>/scripts/fill_exit_papers.py '<json>' /mnt/user-data/outputs/exit_certificates_<dec_no_part1>.pdf
 ```
 
-Where `<json>` is a single-line JSON string with all 10 fields:
+Where `<skill_dir>` is the directory containing this SKILL.md, and `<json>` is a single-line
+JSON string with all 10 fields.
 
 **Example only — replace with actual extracted values:**
 ```json
@@ -103,18 +123,19 @@ Where `<json>` is a single-line JSON string with all 10 fields:
 
 After running, present the output file to the user with `present_files`.
 
-## Text fitting rules
+## Text Fitting Rules
 
 The script handles font sizing automatically per field. Description and BillNo fields are
 multiline. However, if the user notices overflow on a specific field, reduce verbosity of
 that field's value (e.g. abbreviate description lines) and regenerate — do not truncate
 silently without telling the user.
 
-## Important notes
+## Important Notes
 
-- **ExportBillNoFormField is intentionally left blank** — do not fill it
-- **ContainerNoFormField is intentionally left blank** — do not fill it
-- **Manifest No is intentionally left blank** - do not fill it
+- **ExportBillNoFormField is intentionally left blank** — do not fill it unless prompted by user
+- **ContainerNoFormField is intentionally left blank** — do not fill it unless prompted by user
+- **Manifest No is intentionally left blank** — do not fill it unless prompted by user
+- **Customs Seal is intentionally left blank** - do not fill it unless prompted by user
 - All 3 pages always receive identical data — never fill pages selectively
-- The template PDF path is relative to the script: `../assets/exit_papers_template.pdf`
+- The template path used by the fill script is relative to the script: `../assets/exit_papers_template.pdf`
 - Output filename should include the DEC NO for traceability
