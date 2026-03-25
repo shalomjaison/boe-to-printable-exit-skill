@@ -1,7 +1,6 @@
 import sys
 import json
 import os
-import tempfile
 
 from pypdf import PdfReader, PdfWriter
 
@@ -53,32 +52,24 @@ def fill_exit_papers(data, template_path, output_path):
     """
     Main entry point. Patches the template, fills all 3 pages, saves output.
     """
-    # Work on a temp copy so we never modify the original template
-    with tempfile.NamedTemporaryFile(suffix='.pdf', delete=False) as tmp:
-        patched_path = tmp.name
- 
-    try:
-        field_map = build_field_map(data)
- 
-        reader = PdfReader(patched_path)
-        writer = PdfWriter(clone_from=reader)
- 
-        for page_num, field_values in field_map.items():
-            writer.update_page_form_field_values(
-                writer.pages[page_num - 1],
-                field_values,
-                auto_regenerate=False
-            )
- 
-        writer.set_need_appearances_writer(True)
- 
-        with open(output_path, 'wb') as f:
-            writer.write(f)
- 
-        print(f"✓ Output saved to: {output_path}")
- 
-    finally:
-        os.unlink(patched_path)
+    field_map = build_field_map(data)
+
+    reader = PdfReader(template_path)
+    writer = PdfWriter(clone_from=reader)
+
+    for page_num, field_values in field_map.items():
+        writer.update_page_form_field_values(
+            writer.pages[page_num - 1],
+            field_values,
+            auto_regenerate=False
+        )
+
+    writer.set_need_appearances_writer(True)
+
+    with open(output_path, 'wb') as f:
+        writer.write(f)
+
+    print(f"✓ Output saved to: {output_path}")
 
 if __name__ == "__main__":
     if len(sys.argv) != 4:
