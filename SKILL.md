@@ -33,6 +33,10 @@ If not found there, check if the user has uploaded it directly in chat.
 The template PDF (`assets/exit_papers_template.pdf`) has already been **pre-patched** for
 AcroForm compatibility. **Do not re-patch it as part of normal operation.**
 
+The template has a transparent/white background by design — this is intentional
+so that text-only data prints onto the physical colored papers. A blank-looking
+template is correct behaviour, not a sign of corruption.
+
 If form fields fail to fill or save correctly (e.g. fields appear blank in the output PDF
 after running the fill script), re-patching may be needed. A patch script is available
 in the scripts directory:
