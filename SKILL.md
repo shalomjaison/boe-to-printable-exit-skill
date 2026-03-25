@@ -4,7 +4,7 @@ description: >
   Use this skill when a user uploads a UAE Dubai Customs Bill of Entry (BOE) PDF and wants
   to generate print-ready exit certificates, OR when a user provides shipment details manually
   and wants to fill the Dubai Customs Exit/Entry Certificate. This skill extracts key fields
-  from the BOE — including exporter, declaration number and manifest number, date, country of
+  from the BOE — including exporter, both the declaration numbers, date, country of
   origin, port of loading, destination, quantity, goods description, VAT TRN, and weight —
   and produces a complete self-contained 3-page PDF (yellow/green/blue copies) filled via
   embedded form fields, ready to print on plain paper. Also trigger this skill when the user
@@ -24,17 +24,21 @@ pixel-perfect regardless of input length.
 - `assets/exit_papers_template.pdf` — 3-page template (yellow/green/blue) with named form fields
 - `scripts/fill_exit_papers.py` — fills all 3 pages in one call
 
+Look for the template first in assets/exit_papers_template.pdf. If not found there, check if the user has uploaded it directly in chat.
+
 ## Workflow
 
 ### Mode 1: BOE PDF uploaded
 
 Extract the following fields visually from the BOE. The BOE is a UAE Customs form — sections
 are numbered. Extract exactly as shown, stripping any AE-XXXXXXX code prefixes from names.
+The BOE PDF will either be uploaded directly in chat, or found in the mounted uploads folder. Check both before asking the user to upload it.
 
 | Data Field          | BOE Section & Label                              | Notes |
 |---------------------|--------------------------------------------------|-------|
 | exporter            | Section 6 — IMPORTER / EXPORTER                 | Strip "AE-XXXXXXX - " prefix |
-| dec_no              | Section 1 — DEC NO (number inside and outside the box)      | e.g. 201-00007472-26 |
+| dec_no_part1              | Section 1 — DEC NO (number inside the box)      | e.g. 201-00007472-26 |
+| dec_no_part2        | Section 1 — number printed below the DEC NO box | e.g. 141505260633 |
 | dec_date            | Section 2 — DEC DATE                            | Format as DD/MM/YYYY |
 | country_of_origin   | Section 24 — ORIGIN                             | |
 | point_of_exit       | Section 18 — PORT OF LOADING                    | |
@@ -61,8 +65,8 @@ regenerate. All 3 copies always receive the same data — never update just one 
 | User says...                        | Data field          |
 |-------------------------------------|---------------------|
 | exporter / company name             | exporter            |
-| bill number / declaration number    | dec_no              |
-| manifest number / second number     | manifest_no         |
+| bill number / declaration number    | dec_no_part1 + dec_no_part2              |
+| second number                       | dec_no_part2        |
 | date                                | dec_date            |
 | country of origin / origin          | country_of_origin   |
 | point of exit / port of loading     | point_of_exit       |
@@ -76,16 +80,17 @@ regenerate. All 3 copies always receive the same data — never update just one 
 Once all fields are confirmed, run the fill script:
 
 ```bash
-python /path/to/scripts/fill_exit_papers.py '<json>' /mnt/user-data/outputs/exit_certificates_<dec_no>.pdf
+python /path/to/scripts/fill_exit_papers.py '<json>' /mnt/user-data/outputs/exit_certificates_<dec_no_part1>.pdf
 ```
 
 Where `<json>` is a single-line JSON string with all 10 fields:
 
+**Example only — replace with actual extracted values:**
 ```json
 {
   "exporter": "GLOBAL LUBRICANT INDUSTRY LLC",
-  "dec_no": "201-00007472-26",
-  "manifest_no": "141505260633",
+  "dec_no_part1": "201-00007472-26",
+  "dec_no_part2": "141505260633",
   "dec_date": "06/01/2026",
   "country_of_origin": "AE",
   "point_of_exit": "JEBEL ALI",
@@ -109,6 +114,7 @@ silently without telling the user.
 
 - **ExportBillNoFormField is intentionally left blank** — do not fill it
 - **ContainerNoFormField is intentionally left blank** — do not fill it
+- **Manifest No is intentionally left blank** - do not fill it
 - All 3 pages always receive identical data — never fill pages selectively
 - The template PDF path is relative to the script: `../assets/exit_papers_template.pdf`
 - Output filename should include the DEC NO for traceability
