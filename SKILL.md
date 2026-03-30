@@ -6,31 +6,29 @@ description: >
   and wants to fill the Dubai Customs Exit/Entry Certificate. This skill extracts key fields
   from the BOE — including exporter, both the declaration numbers, date, country of
   origin, port of loading, destination, quantity, goods description, VAT TRN, and weight —
-  and produces a complete self-contained 3-page PDF (yellow/green/blue copies) filled via
-  embedded form fields, ready to print on plain paper. Also trigger this skill when the user
-  wants to correct or update a specific field on a previously generated exit certificate — changes
-  apply across all 3 copies automatically. Trigger whenever the user mentions exit certificates,
-  customs exit papers, exit papers, شهادة خروج, or asks to process, fill, or correct a BOE.
+  and produces a single-page filled PDF via embedded form fields, ready to print onto 3 physical 
+  colored paper copies (yellow/green/blue). Also trigger this skill when the user wants to correct 
+  or update a specific field on a previously generated exit certificate. Trigger whenever the user 
+  mentions exit certificates, customs exit papers, exit papers, شهادة خروج, or asks to process, 
+  fill, or correct a BOE.
 ---
 
 # BOE to Printable Exit Certificates
 
-Generates a filled 3-page Dubai Customs Exit/Entry Certificate PDF from a Bill of Entry (BOE)
-or from manually provided data. Uses embedded PDF form fields — no coordinate guessing, always
-pixel-perfect regardless of input length.
+Generates a filled single-page Dubai Customs Exit/Entry Certificate PDF from a Bill of Entry (BOE) or from manually provided data. The single page is designed to be printed 3 times onto physical yellow, green, and blue paper copies. Uses embedded PDF form fields — no coordinate guessing, always pixel-perfect regardless of input length.
 
 ## Assets
 
-- `assets/exit_papers_template.pdf` — 3-page template (yellow/green/blue) with named form fields
-- `scripts/fill_exit_papers.py` — fills all 3 pages in one call
-- `scripts/patch_template.py` — re-patches the template if AcroForm compatibility is ever broken
+- `assets/exit_papers_template_patched.pdf` — single-page layout template with named form fields and pre-patched
+- `scripts/fill_exit_papers.py` — fills the page layout template in one call
+- `scripts/patch_once.py` — re-patches the template if AcroForm compatibility is ever broken and also has functions to remove text box borders and content stream from a template pdf
 
-Look for the template first in `assets/exit_papers_template.pdf` (relative to this SKILL.md).
+Look for the template first in `assets/exit_papers_template_patched.pdf` (relative to this SKILL.md).
 If not found there, check if the user has uploaded it directly in chat.
 
 ## Template Patching
 
-The template PDF (`assets/exit_papers_template.pdf`) has already been **pre-patched** for
+The template PDF (`assets/exit_papers_template_patched.pdf`) has already been **pre-patched** for
 AcroForm compatibility. **Do not re-patch it as part of normal operation.**
 
 The template has a transparent/white background by design — this is intentional
@@ -42,7 +40,7 @@ after running the fill script), re-patching may be needed. A patch script is ava
 in the scripts directory:
 
 ```bash
-python <skill_dir>/scripts/patch_template.py
+python <skill_dir>/scripts/patch_once.py
 ```
 
 This regenerates the patched template in-place. **Only run this if the fill script produces
@@ -77,26 +75,43 @@ or correct before generating. This is important — OCR can miss values on dense
 
 Ask the user for each field in the table above. Collect all values before generating.
 
-### Mode 3: Correction after generation
+### Mode 3: Correction, addition, or removal after generation
 
 The user may say things like "change the destination", "fix the exporter name", or reference
 a field by its label on the form. Map their request to the correct data field, update it, and
-regenerate. All 3 copies always receive the same data — never update just one page.
+regenerate.
+
+The user may also ask to fill fields that were left blank by default. The following fields are
+optional and only filled on request:
+
+| Field name (PDF)         | Label on form   |
+|--------------------------|-----------------|
+| ManifestNoFormField      | Air way bill no / Export Bill No / Manifest No     |
+| CustomsSealNoFormField   | Customs Seal No |
+| ContainerNoFormField     | Container No / Vehicle No   |
+
+The user may also ask to clear a field that was previously filled — set its value to `""` and
+regenerate.
 
 **Field name mapping for common user corrections:**
 
-| User says...                        | Data field              |
-|-------------------------------------|-------------------------|
-| exporter / company name             | exporter                |
+| User says...                        | Data field                  |
+|-------------------------------------|-----------------------------|
+| exporter / company name             | exporter                    |
 | bill number / declaration number    | dec_no_part1 + dec_no_part2 |
-| second number                       | dec_no_part2            |
-| date                                | dec_date                |
-| country of origin / origin          | country_of_origin       |
-| point of exit / port of loading     | point_of_exit           |
-| destination / country               | destination             |
-| quantity / packages / containers    | quantity                |
-| description / goods                 | description             |
-| weight / total weight               | total_weight            |
+| second number                       | dec_no_part2                |
+| date                                | dec_date                    |
+| country of origin / origin          | country_of_origin           |
+| point of exit / port of loading     | point_of_exit               |
+| destination / country               | destination                 |
+| quantity / packages / containers    | quantity                    |
+| description / goods                 | description                 |
+| weight / total weight               | total_weight                |
+| manifest no / Air Way Bill No / Export Bill No| ManifestNoFormField         |
+| customs seal no                     | CustomsSealNoFormField      |
+| container no / vehicle no           | ContainerNoFormField        |
+| remove / clear / delete [field]     | Set that field to ""        |
+
 
 ## Generating the PDF
 
@@ -107,7 +122,7 @@ python <skill_dir>/scripts/fill_exit_papers.py '<json>' /mnt/user-data/outputs/e
 ```
 
 Where `<skill_dir>` is the directory containing this SKILL.md, and `<json>` is a single-line
-JSON string with all 10 fields.
+JSON string with the required fields.
 
 **Example only — replace with actual extracted values:**
 ```json
@@ -135,11 +150,5 @@ that field's value (e.g. abbreviate description lines) and regenerate — do not
 silently without telling the user.
 
 ## Important Notes
-
-- **ExportBillNoFormField is intentionally left blank** — do not fill it unless prompted by user
-- **ContainerNoFormField is intentionally left blank** — do not fill it unless prompted by user
-- **Manifest No is intentionally left blank** — do not fill it unless prompted by user
-- **Customs Seal is intentionally left blank** - do not fill it unless prompted by user
-- All 3 pages always receive identical data — never fill pages selectively
-- The template path used by the fill script is relative to the script: `../assets/exit_papers_template.pdf`
+- The template path used by the fill script is relative to the script: `../assets/exit_papers_template_patched.pdf`
 - Output filename should include the DEC NO for traceability

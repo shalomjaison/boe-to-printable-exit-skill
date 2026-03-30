@@ -1,9 +1,43 @@
 ## Only run this script once to patch the template. The template is already patched in the assets folder, but if you feel the need to patch it again, run this script.
-
-
 from pypdf import PdfReader, PdfWriter
-from pypdf.generic import NameObject, DictionaryObject, NumberObject, ByteStringObject
-from fill_exit_papers import base_name, FONT_SIZES, MULTILINE_FIELDS
+from pypdf.generic import NameObject, DictionaryObject, NumberObject, ByteStringObject, ArrayObject, FloatObject, DecodedStreamObject
+
+FONT_SIZES = {
+    'ExporterFormField':           9,
+    'BillNoFormField':             7,
+    'DateFormField':               9,
+    'COOFormField':                9,
+    'PointOfExitFormField':        9,
+    'DestinationFormField':        9,
+    'QuantityFormField':           8,
+    'DescriptionOfGoodsFormField': 7,
+    'TotalQuantityFormField':      8,
+    'TotalWeightFormField':        8,
+    'ManifestNoFormField':         9,
+    'CustomsSealNoFormField':      9,
+    'ContainerNoFormField':        9,
+}
+
+MULTILINE_FIELDS = {'BillNoFormField', 'DescriptionOfGoodsFormField'}
+
+def remove_field_borders(writer):
+    acroform = writer._root_object['/AcroForm'].get_object()
+    for field_ref in acroform['/Fields']:
+        field = field_ref.get_object()
+        field[NameObject('/Border')] = ArrayObject([
+            FloatObject(0), FloatObject(0), FloatObject(0)
+        ])
+        field[NameObject('/BS')] = DictionaryObject({
+            NameObject('/W'): NumberObject(0),
+            NameObject('/S'): NameObject('/S')
+        })
+
+def remove_page_content_streams(writer):
+    for page in writer.pages:
+        empty_stream = DecodedStreamObject()
+        empty_stream.set_data(b'')
+        page[NameObject('/Contents')] = writer._add_object(empty_stream)
+
 
 def patch_template(template_path, patched_path):
     reader = PdfReader(template_path)
@@ -30,20 +64,22 @@ def patch_template(template_path, patched_path):
     for field_ref in acroform['/Fields']:
         field = field_ref.get_object()
         name = str(field.get('/T', ''))
-        base = base_name(name)
  
-        if base in FONT_SIZES:
+        if name in FONT_SIZES:
             field[NameObject('/DA')] = ByteStringObject(
-                f'/Helv {FONT_SIZES[base]} Tf 0 g'.encode()
+                f'/Helv {FONT_SIZES[name]} Tf 0 g'.encode()
             )
-            if base in MULTILINE_FIELDS:
+            if name in MULTILINE_FIELDS:
                 current_flags = int(field.get('/Ff', 0))
                 field[NameObject('/Ff')] = NumberObject(current_flags | 4096)
+    
+    remove_page_content_streams(writer)
+    remove_field_borders(writer)
  
     with open(patched_path, 'wb') as f:
         writer.write(f)
 
 if __name__ == "__main__":
-    patch_template('../assets/exit_papers_template.pdf', '../assets/exit_papers_template_patched.pdf')
+    patch_template('../assets/BillOfEntry_FormFields.pdf', '../assets/exit_papers_template_patched.pdf')
 
 
