@@ -86,9 +86,11 @@ optional and only filled on request:
 
 | Field name (PDF)         | Label on form   |
 |--------------------------|-----------------|
-| ManifestNoFormField      | Air way bill no / Export Bill No / Manifest No     |
+| ManifestNoFormField      | Export Bill No / Manifest No     |
 | CustomsSealNoFormField   | Customs Seal No |
 | ContainerNoFormField     | Container No / Vehicle No   |
+| AirwayBillReferenceNoFormField | Airway Bill Reference Number |
+| ExecutionDateFormField   | Date of Execution |
 
 The user may also ask to clear a field that was previously filled — set its value to `""` and
 regenerate.
@@ -107,9 +109,11 @@ regenerate.
 | quantity / packages / containers    | quantity                    |
 | description / goods                 | description                 |
 | weight / total weight               | total_weight                |
-| manifest no / Air Way Bill No / Export Bill No| ManifestNoFormField         |
+| manifest no / Export Bill No        | ManifestNoFormField         |
 | customs seal no                     | CustomsSealNoFormField      |
 | container no / vehicle no           | ContainerNoFormField        |
+| reference no / airway bill no       | AirwayBillReferenceNoFormField |
+| date of execution                   | ExecutionDateFormField      |
 | remove / clear / delete [field]     | Set that field to ""        |
 
 
@@ -152,3 +156,9 @@ silently without telling the user.
 ## Important Notes
 - The template path used by the fill script is relative to the script: `../assets/exit_papers_template_patched.pdf`
 - Output filename should include the DEC NO for traceability
+- Field borders and white background fills are handled in two places:
+  (1) `patch_once.py` removes white box backgrounds (`MK/BG`) and border color (`MK/BC`)
+  from the template permanently — the asset is already patched with this. In case you detect white box backgrounds and border color, you can run the `remove_field_borders` function in the `patch_once.py` script
+  (2) `fill_exit_papers.py` fixes black border rectangles caused by a missing `n` operator
+  after the clipping path `W` in appearance streams (`fix_ap_streams`) — this runs
+  automatically every time a PDF is generated since pypdf regenerates AP streams on each fill.

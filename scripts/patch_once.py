@@ -31,6 +31,13 @@ def remove_field_borders(writer):
             NameObject('/W'): NumberObject(0),
             NameObject('/S'): NameObject('/S')
         })
+        # Remove white background fill and border color from MK
+        mk = field.get('/MK', None)
+        if mk:
+            mk_obj = mk.get_object() if hasattr(mk, 'get_object') else mk
+            if NameObject('/BG') in mk_obj:
+                del mk_obj[NameObject('/BG')]
+            mk_obj[NameObject('/BC')] = ArrayObject([])
 
 def remove_page_content_streams(writer):
     for page in writer.pages:

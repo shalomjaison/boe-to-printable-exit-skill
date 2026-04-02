@@ -3,7 +3,8 @@ import json
 import os
 
 from pypdf import PdfReader, PdfWriter
-
+from pypdf.generic import NameObject, NumberObject
+import re as _re
 
 def build_field_map(data):
     """
@@ -28,6 +29,31 @@ def build_field_map(data):
     }
     return field_map
 
+def fix_ap_streams(writer):
+    page = writer.pages[0]
+    annots = page.get("/Annots", None)
+    if not annots:
+        return
+    annot_list = annots.get_object() if hasattr(annots, 'get_object') else annots
+    for annot_ref in annot_list:
+        annot = annot_ref.get_object()
+        ap = annot.get("/AP", None)
+        if ap:
+            ap_obj = ap.get_object() if hasattr(ap, 'get_object') else ap
+            normal = ap_obj.get("/N", None)
+            if normal:
+                n_obj = normal.get_object() if hasattr(normal, 'get_object') else normal
+                try:
+                    raw = n_obj.get_data()
+                    text = raw.decode('latin-1')
+                    new_text = _re.sub(r're(\s+)W(\s+)(?!n)', r're\1W\2n\2', text)
+                    if new_text != text:
+                        n_obj._data = new_text.encode('latin-1')
+                        if "/Filter" in n_obj:
+                            del n_obj[NameObject("/Filter")]
+                        n_obj[NameObject("/Length")] = NumberObject(len(n_obj._data))
+                except Exception:
+                    pass
 
 def fill_exit_papers(data, template_path, output_path):
     """
@@ -45,6 +71,7 @@ def fill_exit_papers(data, template_path, output_path):
     )
 
     writer.set_need_appearances_writer(True)
+    fix_ap_streams(writer)
 
     with open(output_path, 'wb') as f:
         writer.write(f)
