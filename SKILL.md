@@ -71,6 +71,17 @@ Check both before asking the user to upload it.
 After extraction, **show the user a summary table** of extracted values and ask them to confirm
 or correct before generating. This is important — OCR can miss values on dense forms.
 
+Also include the optional fields in the summary, shown as empty, so the user knows which fields
+are available and what keyword to say to fill them:
+
+| Field            | Value  | Say this to fill it          |
+|------------------|--------|------------------------------|
+| Export Bill No / Manifest No | *(not filled)* | "manifest no" |
+| Customs Seal No  | *(not filled)* | "customs seal no"            |
+| Container No / Vehicle No | *(not filled)* | "container no"          |
+| Airway Bill Reference No | *(not filled)* | "reference no"           |
+| Date of Execution | *(not filled)* | "date of execution"         |
+
 ### Mode 2: No BOE — user provides data manually
 
 Ask the user for each field in the table above. Collect all values before generating.

@@ -16,6 +16,8 @@ FONT_SIZES = {
     'ManifestNoFormField':         9,
     'CustomsSealNoFormField':      9,
     'ContainerNoFormField':        9,
+    'ExecutionDateFormField':      9,
+    'AirwayBillNoFormField':       9,
 }
 
 MULTILINE_FIELDS = {'BillNoFormField', 'DescriptionOfGoodsFormField'}

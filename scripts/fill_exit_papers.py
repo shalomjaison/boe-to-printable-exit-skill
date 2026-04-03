@@ -26,6 +26,8 @@ def build_field_map(data):
         'ManifestNoFormField':         data.get('manifest_no', ''),
         'CustomsSealNoFormField':      data.get('customs_seal_no', ''),
         'ContainerNoFormField':        data.get('container_no', ''),
+        'ExecutionDateFormField':      data.get('execution_date', ''),
+        'AirwayBillNoFormField':       data.get('airway_bill_no', ''),
     }
     return field_map
 
