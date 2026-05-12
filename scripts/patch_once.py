@@ -2,8 +2,26 @@
 from pypdf import PdfReader, PdfWriter
 from pypdf.generic import NameObject, DictionaryObject, NumberObject, ByteStringObject, ArrayObject, FloatObject, DecodedStreamObject
 
-FONT_SIZES = {
+DUBAI_CUSTOMS_FONT_SIZES = {
     'ExporterFormField':           9,
+    'BillNoFormField':             7,
+    'DateFormField':               9,
+    'COOFormField':                9,
+    'PointOfExitFormField':        9,
+    'DestinationFormField':        9,
+    'QuantityFormField':           8,
+    'DescriptionOfGoodsFormField': 7,
+    'TotalQuantityFormField':      8,
+    'TotalWeightFormField':        8,
+    'ManifestNoFormField':         9,
+    'CustomsSealNoFormField':      9,
+    'ContainerNoFormField':        9,
+    'ExecutionDateFormField':      9,
+    'AirwayBillNoFormField':       9,
+}
+
+SHARJAH_CUSTOMS_FONT_SIZES = {
+    'ExporterFormField':           8,
     'BillNoFormField':             7,
     'DateFormField':               9,
     'COOFormField':                9,
@@ -48,7 +66,7 @@ def remove_page_content_streams(writer):
         page[NameObject('/Contents')] = writer._add_object(empty_stream)
 
 
-def patch_template(template_path, patched_path):
+def patch_template(template_path, patched_path, font_sizes):
     reader = PdfReader(template_path)
     writer = PdfWriter(clone_from=reader)
 
@@ -74,9 +92,9 @@ def patch_template(template_path, patched_path):
         field = field_ref.get_object()
         name = str(field.get('/T', ''))
  
-        if name in FONT_SIZES:
+        if name in font_sizes:
             field[NameObject('/DA')] = ByteStringObject(
-                f'/Helv {FONT_SIZES[name]} Tf 0 g'.encode()
+                f'/Helv {font_sizes[name]} Tf 0 g'.encode()
             )
             if name in MULTILINE_FIELDS:
                 current_flags = int(field.get('/Ff', 0))
@@ -89,6 +107,10 @@ def patch_template(template_path, patched_path):
         writer.write(f)
 
 if __name__ == "__main__":
-    patch_template('../assets/BillOfEntry_FormFields.pdf', '../assets/exit_papers_template_patched.pdf')
-
+    import sys
+    authority = sys.argv[1] if len(sys.argv) > 1 else 'dubai'
+    if authority == 'sharjah':
+        patch_template('../assets/SharjahCustomsExitFormFields.pdf', '../assets/sharjah_exit_template_patched.pdf', SHARJAH_CUSTOMS_FONT_SIZES)
+    else:
+        patch_template('../assets/DubaiCustomsExitFormFields.pdf', '../assets/dubai_exit_template_patched.pdf', DUBAI_CUSTOMS_FONT_SIZES)
 
