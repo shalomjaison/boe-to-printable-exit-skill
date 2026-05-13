@@ -31,6 +31,7 @@ def build_field_map(data, is_sharjah):
         'ContainerNoFormField':        data.get('container_no', ''),
         'ExecutionDateFormField':      data.get('execution_date', ''),
         'AirwayBillNoFormField':       data.get('airway_bill_no', ''),
+        'ValueFormField':              f"{data.get('currency', 'AED')} {data.get('total_value', '')}".strip(),
     }
     return field_map
 

@@ -96,12 +96,20 @@ Strip any AE-XXXXXXX code prefixes from the exporter name.
 | total_weight      | Section 10 — GROSS WEIGHT                       | Include unit e.g. "5200 KG" |
 | container_no      | Section 19 — MARKS & NUMBERS                    | |
 | vat_trn           | Not on BOE                                      | Ask user before generating |
+| total_value       | Column 28 — CIF LOCAL VALUE                     | Sum across all pages. Include currency prefix in output e.g. "AED 125000.00" |
+| currency          | Column 28 header                                | Usually AED — extract if shown, default to AED |
 
 
 After extraction, **show the user a summary table** of extracted values and ask them to confirm
 or correct before generating. This is important — OCR can miss values on dense forms.
 
-For Sharjah: if VAT TRN has not yet been provided, ask for it at this step before proceeding.
+For Sharjah: 
+- If VAT TRN has not yet been provided, ask for it at this step before proceeding.
+- When reading the BOE, Column 28 (CIF Local Value) appears per line item across multiple pages. Claude needs to:
+  1. Extract all numeric values from column 28
+  2. Sum them
+  3. Format as {currency} {total} — e.g. AED 247500.00
+  4. Pass currency and total_value as separate keys to the script
 
 Also include the optional fields in the summary, shown as empty, so the user knows which fields
 are available and what keyword to say to fill them:
@@ -143,7 +151,7 @@ optional and only filled on request:
 | ManifestNoFormField      | Export Bill No / Manifest No     |
 | CustomsSealNoFormField   | Customs Seal No |
 | ContainerNoFormField     | Container No / Vehicle No   |
-| AirwayBillReferenceNoFormField | Airway Bill Reference Number |
+| AirwayBillNoFormField | Airway Bill Reference Number |
 | ExecutionDateFormField   | Date of Execution |
 
 The user may also ask to clear a field that was previously filled — set its value to `""` and
@@ -188,6 +196,8 @@ regenerate.
 | manifest bill no | ManifestNoFormField |
 | customs seal no | CustomsSealNoFormField |
 | date of execution | ExecutionDateFormField |
+| value / total value / CIF value | total_value |
+| currency | currency |
 | remove / clear / delete [field] | Set that field to "" |
 
 
@@ -233,7 +243,9 @@ python <skill_dir>/scripts/fill_exit_papers.py '<json>' /mnt/user-data/outputs/e
   "quantity": "120 CARTONS",
   "description": "PLASTIC PIPES 50MM x 120\nSTEEL RODS 6MM x 80\nVAT TRN: 100512009400001",
   "total_weight": "5200 KG",
-  "container_no": "MSKU1234567"
+  "container_no": "MSKU1234567",
+  "currency": "AED",
+  "total_value": "125000.00"
 }
 ```
 
