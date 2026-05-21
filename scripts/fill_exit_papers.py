@@ -12,27 +12,46 @@ def build_field_map(data, is_sharjah):
     """
     if is_sharjah:
         bill_no_value = data['dec_no']
+        field_map = {
+            'ExporterFormField':           data['exporter'],
+            'BillNoFormField':             bill_no_value,
+            'DateFormField':               data['dec_date'],
+            'COOFormField':                data['country_of_origin'],
+            'PointOfExitFormField':        data['point_of_exit'],
+            'DestinationFormField':        data['destination'],
+            'QuantityFormField':           data['quantity'],
+            'DescriptionOfGoodsFormField': data['description'],
+            'TotalQuantityFormField':      data['quantity'],
+            'TotalWeightFormField':        data['total_weight'],
+            'ManifestNoFormField':         data.get('manifest_no', ''),
+            'CustomsSealNoFormField':      data.get('customs_seal_no', ''),
+            'ContainerNoFormField':        data.get('container_no', ''),
+            'ExecutionDateFormField':      data.get('execution_date', ''),
+            'AirwayBillNoFormField':       data.get('airway_bill_no', ''),
+            'ValueFormField':              f"{data.get('currency', 'AED')} {data.get('total_value', '')}".strip(),
+        }
     else:
         bill_no_value = f"{data['dec_no_part1']}\n{data['dec_no_part2']}"
+        field_map = {
+            'ExporterFormField':           data['exporter'],
+            'BillNoFormField':             bill_no_value,
+            'DecDateFormField':               data['dec_date'],
+            'COOFormField':                data['country_of_origin'],
+            'PointOfExitFormField':        data['point_of_exit'],
+            'DestinationFormField':        data['destination'],
+            'QuantityFormField':           data['quantity'],
+            'DescriptionOfGoodsFormField': data['description'],
+            'TotalQuantityFormField':      data['quantity'],
+            'TotalWeightFormField':        data['total_weight'],
+            'ManifestNoFormField':         data.get('manifest_no', ''),
+            'CustomsSealNoFormField':      data.get('customs_seal_no', ''),
+            'ContainerNoFormField':        data.get('container_no', ''),
+            'ExecutionDateFormField':      data.get('execution_date', ''),
+            'AirwayBillReferenceNoFormField':       data.get('airway_bill_no', ''),
+            'ValueFormField':              f"{data.get('currency', 'AED')} {data.get('total_value', '')}".strip(),
+        }
  
-    field_map = {
-        'ExporterFormField':           data['exporter'],
-        'BillNoFormField':             bill_no_value,
-        'DateFormField':               data['dec_date'],
-        'COOFormField':                data['country_of_origin'],
-        'PointOfExitFormField':        data['point_of_exit'],
-        'DestinationFormField':        data['destination'],
-        'QuantityFormField':           data['quantity'],
-        'DescriptionOfGoodsFormField': data['description'],
-        'TotalQuantityFormField':      data['quantity'],
-        'TotalWeightFormField':        data['total_weight'],
-        'ManifestNoFormField':         data.get('manifest_no', ''),
-        'CustomsSealNoFormField':      data.get('customs_seal_no', ''),
-        'ContainerNoFormField':        data.get('container_no', ''),
-        'ExecutionDateFormField':      data.get('execution_date', ''),
-        'AirwayBillNoFormField':       data.get('airway_bill_no', ''),
-        'ValueFormField':              f"{data.get('currency', 'AED')} {data.get('total_value', '')}".strip(),
-    }
+    
     return field_map
 
 def fix_ap_streams(writer):

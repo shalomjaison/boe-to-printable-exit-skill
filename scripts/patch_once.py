@@ -5,7 +5,7 @@ from pypdf.generic import NameObject, DictionaryObject, NumberObject, ByteString
 DUBAI_CUSTOMS_FONT_SIZES = {
     'ExporterFormField':           9,
     'BillNoFormField':             7,
-    'DateFormField':               9,
+    'DecDateFormField':               9,
     'COOFormField':                9,
     'PointOfExitFormField':        9,
     'DestinationFormField':        9,
@@ -17,7 +17,7 @@ DUBAI_CUSTOMS_FONT_SIZES = {
     'CustomsSealNoFormField':      9,
     'ContainerNoFormField':        9,
     'ExecutionDateFormField':      9,
-    'AirwayBillNoFormField':       9,
+    'AirwayBillReferenceNoFormField':       9,
 }
 
 SHARJAH_CUSTOMS_FONT_SIZES = {
@@ -27,15 +27,16 @@ SHARJAH_CUSTOMS_FONT_SIZES = {
     'COOFormField':                9,
     'PointOfExitFormField':        9,
     'DestinationFormField':        9,
-    'QuantityFormField':           8,
+    'QuantityFormField':           7,
     'DescriptionOfGoodsFormField': 7,
     'TotalQuantityFormField':      8,
     'TotalWeightFormField':        8,
-    'ManifestNoFormField':         9,
+    'ManifestNoFormField':         7,
     'CustomsSealNoFormField':      9,
     'ContainerNoFormField':        9,
     'ExecutionDateFormField':      9,
     'AirwayBillNoFormField':       9,
+    'ValueFormField':              8,
 }
 
 MULTILINE_FIELDS = {'BillNoFormField', 'DescriptionOfGoodsFormField'}
@@ -96,9 +97,8 @@ def patch_template(template_path, patched_path, font_sizes):
             field[NameObject('/DA')] = ByteStringObject(
                 f'/Helv {font_sizes[name]} Tf 0 g'.encode()
             )
-            if name in MULTILINE_FIELDS:
-                current_flags = int(field.get('/Ff', 0))
-                field[NameObject('/Ff')] = NumberObject(current_flags | 4096)
+            current_flags = int(field.get('/Ff', 0))
+            field[NameObject('/Ff')] = NumberObject(current_flags | 4096)
     
     remove_page_content_streams(writer)
     remove_field_borders(writer)
