@@ -58,6 +58,25 @@ Read the BOE header (top of first page):
 
 All subsequent steps branch on this result.
 
+### Step 1b — Choose Exit Certificate Type
+ 
+After detecting the BOE authority, ask the user which exit certificate to generate:
+ 
+> "Which exit certificate should I generate — Dubai or Sharjah?"
+ 
+This is independent of the BOE source. A Dubai BOE can produce a Sharjah exit certificate and vice versa (cross-filling). Use the selected certificate type to determine which template to fill, but always extract data using the BOE authority's extraction table (Step 1 / Mode 1).
+ 
+| BOE Authority | Certificate Type | Template used |
+|---------------|-----------------|---------------|
+| Dubai         | Dubai           | `dubai_exit_template_patched.pdf` |
+| Dubai         | Sharjah         | `sharjah_exit_template_patched.pdf` |
+| Sharjah       | Sharjah         | `sharjah_exit_template_patched.pdf` |
+| Sharjah       | Dubai           | `dubai_exit_template_patched.pdf` |
+ 
+**Cross-fill field mapping notes:**
+- When filling a Sharjah certificate from a Dubai BOE: `dec_no` = `dec_no_part1` (use the first part only); `container_no` = value from Dubai Section 18 if available, otherwise leave blank; `total_value` and `currency` are not on Dubai BOEs — ask the user if they want to fill these, otherwise leave blank.
+- When filling a Dubai certificate from a Sharjah BOE: `dec_no_part1` = `dec_no`; `dec_no_part2` = leave blank (`""`); `AirwayBillReferenceNoFormField` = not applicable, leave blank.
+
 ### Mode 1: BOE PDF uploaded
 
 The BOE PDF will either be uploaded directly in chat, or found in the mounted uploads folder.
@@ -151,7 +170,7 @@ optional and only filled on request:
 | ManifestNoFormField      | Export Bill No / Manifest No     |
 | CustomsSealNoFormField   | Customs Seal No |
 | ContainerNoFormField     | Container No / Vehicle No   |
-| AirwayBillNoFormField | Airway Bill Reference Number |
+| AirwayBillReferenceNoFormField | Airway Bill Reference Number |
 | ExecutionDateFormField   | Date of Execution |
 
 The user may also ask to clear a field that was previously filled — set its value to `""` and
@@ -174,7 +193,7 @@ regenerate.
 | manifest no / Air Way Bill No / Export Bill No | ManifestNoFormField |
 | customs seal no | CustomsSealNoFormField |
 | container no / vehicle no | ContainerNoFormField |
-| airway bill reference no / reference no | AirwayBillNoFormField |
+| airway bill reference no / reference no | AirwayBillReferenceNoFormField |
 | date of execution | ExecutionDateFormField |
 | remove / clear / delete [field] | Set that field to "" |
 
@@ -204,6 +223,8 @@ regenerate.
 ## Generating the PDF
 
 Once all fields are confirmed, run the fill script. `<skill_dir>` is the directory containing this SKILL.md.
+
+The template to pass is determined by the **certificate type chosen in Step 1b**, not the BOE authority. Dubai certificate = no third argument (uses default). Sharjah certificate = pass the Sharjah template path explicitly.
 
 **Dubai:**
 ```bash
